@@ -1,34 +1,28 @@
-const http = require('http');
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Socket.IO Server');
-});
+const express = require('express');
+const app = express();
+const server = require('http').createServer(app);
+const cors = require('cors');
 
 const io = require('socket.io')(server, {
   cors: {
-    origin: "*", // Allows requests from any origin
-    methods: ["GET", "POST"],
+    origin: "*",
+    methods: ["*"],
+    credentials: true
   }
 });
 
+app.use(express.json());
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
+const apiRouter = require('./routes/api')(io); 
 
-  socket.on('App\\Events\\MyEvent', (data) => {
-    // Broadcast the event to all connected clients
-    io.emit('App\\Events\\MyEvent', data);
-  });
-  
-  socket.on('test_message', (data) => {
-    console.log('Message from client:', data);
-    socket.emit('test_response', {data: 'Hi, Client!'});
-  });
+app.use(cors()); // This enables CORS for all routes
+app.use('/api', apiRouter);
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-});
+
+// // Test API
+// app.get('/api/test', (req, res) => {
+//   res.json({ message: 'Test API is working' });
+// });
 
 server.listen(6001, () => {
   console.log('Server is running on port 6001');
